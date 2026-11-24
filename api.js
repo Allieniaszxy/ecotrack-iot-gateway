@@ -1686,8 +1686,6 @@ async function publishAssignmentUpdate(
   }
 }
 
-
-
 function validateStatusRequest(req, res) {
   const { status, note } = req.body || {};
 
@@ -1785,7 +1783,6 @@ app.patch("/api/assignments/:id/status", async (req, res) => {
   }
 });
 
-
 // ==========================================
 // BIN MANAGEMENT (create / update)
 // ==========================================
@@ -1814,7 +1811,10 @@ app.post("/api/bins", async (req, res) => {
       });
     }
 
-    for (const [label, value] of [["Name", name], ["Location", location]]) {
+    for (const [label, value] of [
+      ["Name", name],
+      ["Location", location],
+    ]) {
       if (value !== undefined && value !== null && typeof value !== "string") {
         return res.status(400).json({
           success: false,
@@ -2192,8 +2192,7 @@ app.patch("/api/admins/:id", async (req, res) => {
     // Prevent a super admin from locking themselves out.
     if (
       req.params.id === req.admin.id &&
-      (data.status === "INACTIVE" ||
-        (data.role && data.role !== "SUPER_ADMIN"))
+      (data.status === "INACTIVE" || (data.role && data.role !== "SUPER_ADMIN"))
     ) {
       return res.status(400).json({
         success: false,
@@ -2505,7 +2504,7 @@ app.use((error, req, res, next) => {
 // SERVER STARTUP
 // ==========================================
 
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`EcoTrack API running at http://localhost:${PORT}`);
   console.log("Socket.IO server is ready.");
   console.log("Waiting for API requests and real-time readings...");
