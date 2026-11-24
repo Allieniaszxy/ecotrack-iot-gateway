@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  OPERATIONS_MANAGER
+}
+
+model Admin {
+  id           String    @id @default(cuid())
+  fullName     String
+  email        String    @unique
+  passwordHash String
+  role         AdminRole @default(ADMIN)
+  status       String    @default("ACTIVE")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([role])
+  @@index([status])
+}
+
+model Bin {
+  id        String   @id @default(cuid())
+  binId     String   @unique
+  name      String?
+  location  String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readings              SensorReading[]
+  alerts                BinAlert[]
+  collectionAssignments CollectionAssignment[]
+}
+
+model SensorReading {
+  id         String   @id @default(cuid())
+  messageId  String?  @unique
+  binId      String
+  distance   Float
+  fillLevel  Float
+  topic      String
+  receivedAt DateTime @default(now())
+
+  bin Bin @relation(fields: [binId], references: [binId], onDelete: Cascade)
+
+  @@index([binId])
+  @@index([receivedAt])
+  @@index([binId, receivedAt])
+}
+
+model BinAlert {
+  id                    String                 @id @default(cuid())
+  binId                 String
+  severity              String
+  alertType             String
+  message               String
+  fillLevel             Float
+  status                String                 @default("ACTIVE")
+  createdAt             DateTime               @default(now())
+  acknowledgedAt        DateTime?
+  resolvedAt            DateTime?
+  updatedAt             DateTime               @updatedAt
+  collectionAssignments CollectionAssignment[]
+
+  bin Bin @relation(fields: [binId], references: [binId])
+
+  @@index([binId])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([binId, status])
+}
+
+model Collector {
+  id           String   @id @default(cuid())
+  fullName     String
+  email        String?  @unique
+  phone        String   @unique
+  address      String?
+  passwordHash String?
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignments CollectionAssignment[]
+
+  @@index([status])
+  @@index([fullName])
+}
+
+model CollectionAssignment {
+  id           String    @id @default(cuid())
+  binId        String
+  collectorId  String
+  status       String    @default("ASSIGNED")
+  priority     String    @default("NORMAL")
+  scheduledFor DateTime?
+  assignedAt   DateTime  @default(now())
+  acceptedAt   DateTime?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  bin           Bin                       @relation(fields: [binId], references: [binId])
+  collector     Collector                 @relation(fields: [collectorId], references: [id])
+  statusHistory CollectionStatusHistory[]
+  binAlert      BinAlert?                 @relation(fields: [binAlertId], references: [id])
+  binAlertId    String?
+
+  @@index([binId])
+  @@index([collectorId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([createdAt])
+}
+
+model CollectionStatusHistory {
+  id           String   @id @default(cuid())
+  assignmentId String
+  status       String
+  note         String?
+  changedAt    DateTime @default(now())
+
+  assignment CollectionAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@index([assignmentId])
+  @@index([changedAt])
+}

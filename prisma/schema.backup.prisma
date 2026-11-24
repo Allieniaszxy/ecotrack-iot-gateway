@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bin {
+  id        String   @id @default(cuid())
+  binId     String   @unique
+  name      String?
+  location  String?
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  readings SensorReading[]
+  alerts   BinAlert[]
+}
+
+model SensorReading {
+  id         String   @id @default(cuid())
+  binId      String
+  distance   Float
+  fillLevel  Float
+  topic      String
+  receivedAt DateTime @default(now())
+
+  bin Bin @relation(fields: [binId], references: [binId], onDelete: Cascade)
+
+  @@index([binId])
+  @@index([receivedAt])
+}
+
+model BinAlert {
+  id             String    @id @default(cuid())
+  binId          String
+  severity       String
+  alertType      String
+  message        String
+  fillLevel      Float
+  status         String    @default("ACTIVE")
+  createdAt      DateTime  @default(now())
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  bin Bin @relation(fields: [binId], references: [binId])
+
+  @@index([binId])
+  @@index([status])
+  @@index([severity])
+  @@index([createdAt])
+  @@index([binId, status])
+}
